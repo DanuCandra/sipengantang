@@ -12,7 +12,7 @@
     @unless ($compact)
         <span class='leading-none'>
             <span class='block text-base font-extrabold tracking-tight text-forest-900'>GantangScore</span>
-            <span class='mt-1 block text-[10px] font-bold uppercase tracking-[0.18em] text-forest-600'>Penilaian gantangan</span>
+            <span class='mt-1 block text-[10px] font-bold uppercase tracking-[0.18em] text-forest-600'>Event & kompetisi burung</span>
         </span>
     @endunless
 </span>

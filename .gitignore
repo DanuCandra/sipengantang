@@ -25,3 +25,11 @@ _ide_helper.php
 Homestead.json
 Homestead.yaml
 Thumbs.db
+/tmp/pdf-tools/
+/tmp/pdfs/stage8-certificate-preview.php
+/tmp/pdfs/certificate-preview.pdf
+/tmp/pdfs/certificate-preview.png
+/tmp/pdfs/certificate-long-preview.pdf
+/tmp/pdfs/certificate-long-preview.png
+/tmp/realtime/stage8-wire.php
+/tmp/realtime/stage8-wire.py

@@ -583,6 +583,8 @@ Route:
 /
 ```
 
+Landing diposisikan sebagai website resmi brand dan event organizer GantangScore, bukan product-marketing page untuk software. Hierarki copy harus menjual kualitas kompetisi, agenda berikutnya, pengalaman peserta, dan kredibilitas penyelenggara. Informasi sistem cukup menjadi pendukung kepercayaan.
+
 Landing mengambil pola:
 
 ```text
@@ -677,27 +679,27 @@ Desktop:
 Badge:
 
 ```text
-Penjurian Kompetisi Burung yang Transparan
+Event Organizer Burung Berkicau
 ```
 
 H1:
 
 ```text
-Kompetisi Lebih Profesional.
-Penilaian Lebih Transparan.
+Panggung Berkelas untuk
+Suara Terbaik.
 ```
 
 Subheading:
 
 ```text
-Kelola pendaftaran, penjurian, ranking TOPSIS,
-hasil kompetisi, dan piagam dalam satu sistem.
+GantangScore menghadirkan kompetisi burung berkicau
+yang tertib, kompetitif, dan layak dikenang.
 ```
 
 CTA:
 
 ```text
-[Lihat Event] [Cara Kerja]
+[Lihat Agenda Event] [Kenal Lebih Dekat]
 ```
 
 Jika user login peserta:
@@ -1911,6 +1913,12 @@ DQ
 
 # 50. Admin Result / TOPSIS Page
 
+Implementasi Tahap 7 memakai kartu hasil responsif dengan detail rata-rata/jarak yang dapat dibuka. Banner selalu membedakan PROVISIONAL dan FINAL, menampilkan progres serta waktu perhitungan. Tombol hitung ulang membaca database, bukan mengandalkan WebSocket. Finalisasi memakai dialog native dengan fallback inline dan konfirmasi ketik `FINALISASI`.
+
+Panel draw hanya muncul untuk kelompok TOPSIS seri. Admin memilih urutan hasil lempar dadu nyata (tertinggi lebih dahulu), mencatat hasil/kejadian, dan mencentang konfirmasi. Tidak ada tombol simulasi dadu atau edit ranking peserta non-seri. Keputusan tersimpan hanya-baca; FINAL menampilkan peringkat resmi dan penanda bahwa draw diselesaikan di lokasi. Catatan undian internal tidak dipublikasikan.
+
+Penggantian Juri absen tersedia di panel penugasan, hanya saat belum ada nilai submitted dari Juri tersebut. Riwayat penugasan lama tetap tampil. UI menyebut bahwa draft tidak diwariskan dan pengganti wajib menilai sendiri. Kelas final tidak menyediakan tindakan nilai, pelanggaran, penugasan, atau perubahan hadiah/informasi kelas.
+
 Header:
 
 ```text
@@ -2097,6 +2105,8 @@ DISKUALIFIKASI
 
 # 55. Juri Scoring Screen
 
+Implementasi Tahap 5 memakai radio berlabel angka: lima kolom pada layar kecil dan sepuluh kolom pada layar lebih lebar, dengan area sentuh minimal 44px. Kontrol dapat diakses lewat keyboard, memiliki penanda fokus, dan menampilkan pesan validasi per kriteria. Footer aksi menampilkan Simpan draft dan Submit nilai; halaman terkirim hanya menampilkan nilai tersimpan. Penanganan peringatan/DQ ditambahkan pada Tahap 6.
+
 Ini adalah layar paling penting.
 
 Mobile-first.
@@ -2219,6 +2229,10 @@ dari perhitungan ranking kelas.
 ```
 
 Require explicit confirmation.
+
+Implementasi Tahap 6 memakai dialog native dengan fallback formulir inline jika JavaScript tidak tersedia. DQ langsung berada di bagian danger yang dapat dibuka secara sengaja. Dialog menampilkan burung/nomor gantangan, alasan, catatan kejadian, dan checkbox konfirmasi wajib untuk setiap DQ, termasuk eskalasi peringatan. Saat sudah diperingatkan, tombol dan dialog menyebutkan bahwa pelanggaran berikutnya **mengakibatkan** DQ, bukan hanya berpotensi DQ. Alasan `Lainnya` membutuhkan penjelasan.
+
+Riwayat internal tersedia pada lembar peserta Juri, detail peserta Admin, daftar pelanggaran event Admin, serta monitoring event milik Owner. Riwayat menggunakan kartu responsif, badge berteks, waktu, petugas, alasan, dan catatan yang di-escape. Peserta hanya melihat status peringatan/DQ miliknya tanpa alasan internal, catatan, atau identitas Juri. Nilai submitted tetap read-only meskipun tombol pelanggaran masih tersedia selama penjurian berlangsung.
 
 ---
 
@@ -2446,6 +2460,10 @@ Rp150.000
 ```
 
 Bank details configurable.
+
+Implementasi Tahap 4 membaca bank, nomor rekening, nama penerima, dan instruksi dari konfigurasi `gantangscore.payment`. Jika belum lengkap, tampilkan arahan menghubungi panitia tanpa rekening contoh. Nominal transfer diisi dalam Rupiah bulat; Admin melihat peringatan jika nominal berbeda dari snapshot biaya pendaftaran, lalu memutuskan berdasarkan pemeriksaan manual.
+
+Pada penolakan pembayaran, modal native membuka form alasan wajib. Form tetap tersedia secara inline jika JavaScript tidak aktif. Tombol pengiriman menampilkan proses dan dinonaktifkan selama permintaan berjalan. Riwayat pembayaran dipaginasi dan selalu mempertahankan percobaan yang ditolak.
 
 Upload:
 
@@ -3579,3 +3597,50 @@ MOBILE USABILITY WINS.
 ```
 
 GantangScore harus terlihat profesional saat dibuka publik, cepat saat digunakan panitia, dan sangat sederhana saat digunakan juri di tengah kompetisi.
+
+# Implementasi UI Tahap 8 — 29 Oktober 2026
+
+Panel progres memakai komponen Blade `live-class`: badge koneksi dengan teks, progressbar berlabel, jumlah evaluasi/DQ, waktu pembaruan WIB, serta tautan hasil resmi ketika FINAL. Halaman event publik, detail event Owner, monitor/ranking Admin, dan kelas/form Juri memakai bahasa visual forest/gold yang ada. Fallback polling 20 detik tidak me-reload formulir. Perubahan DQ/FINAL menonaktifkan tombol relevan dan menjelaskan perubahan; nilai yang sedang diketik tetap ada.
+
+Tabel ranking internal diperbarui melalui fragment Blade. Form keputusan draw/finalisasi tetap memerlukan muat ulang untuk meninjau snapshot terbaru. Publik hanya melihat progres sampai FINAL tersedia. UI tidak menampilkan raw score Juri lain.
+
+Menu Piagam peserta sudah aktif di `/participant/certificates`. Kartu responsif satu/dua/tiga kolom, nama panjang break-words, empty state, status pending, feedback, serta tombol lihat/cetak dan unduh pada PDF yang tersedia. Notifikasi privat memperbarui kesiapan kartu tanpa membuka storage path.
+
+PDF memakai template `pdf/certificate.blade.php`, A4 landscape, warna forest/gold, nomor dokumen, identitas peserta/burung, kelas/event, rank, tanggal dan penyelenggara. Nama panjang mengecil secara terukur. Tidak ada tanda tangan/stempel palsu; penambahan aset resmi menunggu review. Template normal dan nama panjang telah dirender serta diperiksa satu halaman. Pemeriksaan browser pada seluruh viewport 360–1440 px masih menjadi pekerjaan hardening Tahap 9.
+
+# Hardening UI Tahap 9 — 29 Oktober 2026
+
+Navigasi dashboard mobile sekarang mengeluarkan sidebar tertutup dari urutan fokus melalui inert/aria-hidden. Saat terbuka, sidebar menjadi dialog berlabel, konten belakang inert, fokus dibatasi dalam menu, serta Escape/tombol Tutup/backdrop mengembalikan fokus ke pemicu. Perpindahan breakpoint desktop membersihkan state modal. Tersedia skip link ke main, scroll sidebar untuk layar pendek, fallback navigasi tanpa JavaScript dan dukungan reduced motion.
+
+Komponen form mendukung ID khusus untuk beberapa formulir dengan nama field sama, aria-invalid, serta gabungan referensi helper/error. Placeholder/label terkait diperjelas kontrasnya, dan nama panjang pada layar Juri membungkus. Copy fondasi/tahap pengembangan serta menu nonaktif “Segera” di dashboard Owner/Admin dihapus; alur event aktif tetap menjadi navigasi utama.
+
+Perilaku navigasi pada enam breakpoint diuji dengan adapter DOM ringan dan Node; Blade/form diuji otomatis. Ini belum merupakan pemeriksaan visual responsive browser. Browser automation host tidak tersedia pada sesi Tahap 9; checklist visual akhir ada di `Testing.md` dan status terperinci di kontrak Tahap 9.
+
+# Revisi Navigasi Dashboard dan Pemilihan Admin
+
+Sesuai permintaan pengguna setelah Tahap 9, menu operasional dipusatkan di sidebar:
+
+- Owner: Beranda, Event Saya, Buat Event, Admin Event, Pantau Penjurian. Admin Event/Pantau menampilkan daftar event milik Owner, lalu menuju bagian terkait pada detail event.
+- Admin: Beranda, Semua Event, pemilih event, Ringkasan Event, Kelas Lomba, Peserta, Pembayaran, Juri, Monitor Penjurian, Hasil & Piagam, Hadiah, Pelanggaran, Pengaturan Event. Menu kelas/Juri/monitor/hasil/hadiah membuka pilihan kelas pada event aktif. Menu lain menuju halaman operasional yang sudah ada.
+- Juri: Beranda, Penugasan, Penilaian, Riwayat Nilai; ketika membuka kelas tersedia pintasan Peserta Kelas Ini. Penilaian menampilkan kelas berlangsung, riwayat hanya kelas penugasan aktif yang memiliki evaluasi submitted milik Juri tersebut.
+- Peserta: Beranda, Event, Burung Saya, Pendaftaran, Piagam, Profil.
+
+Pemilih event Admin hanya memuat event penugasannya, maksimum 50 event terbaru ditambah event aktif bila lebih lama. Event lain tetap dapat dipilih dari Semua Event. Pemilihan menggunakan form GET dengan tombol eksplisit, sehingga tidak bergantung pada JavaScript; konteks pilihan disimpan dalam session dan diperiksa ulang terhadap assignment. Sidebar menandai halaman aktif dengan aria-current, bisa discroll tanpa menu/footer bertumpuk, serta mempertahankan perilaku fokus mobile Tahap 9.
+
+Pada detail event Owner, penugasan Admin memakai select “Pilih akun Admin”, menampilkan nama dan Gmail/email akun yang sudah terdaftar. Hanya akun berperan ADMIN, aktif dan belum ditugaskan pada event itu yang ditawarkan. Pilihan dipaginasi 25 akun per halaman. Jika kosong, tombol dinonaktifkan dan pilihan membuat akun baru tetap tersedia. Form tetap mengirim email ke endpoint assignment yang sama; backend menolak akun tidak aktif/non-Admin dan event milik Owner lain meskipun request dimanipulasi.
+
+Data navigasi disiapkan view composer/query; tidak ada query database di Blade. Tidak ada perubahan schema atau reset database pada revisi UI ini. Pengujian akses dan rendering otomatis ditambahkan; verifikasi screenshot browser belum tersedia karena host browser otomatis gagal terhubung.
+
+# Revisi Pemilihan Nomor Gantangan oleh Peserta
+
+Pada formulir daftar kelas, peserta memilih burung dan mengisi “Nomor gantangan pilihan”. Helper menjelaskan bahwa nomor langsung dipesan tanpa verifikasi Admin, harus berupa angka positif, unik pada kelas tersebut, dan terkunci setelah berhasil dipilih. Benturan ditampilkan sebagai error pada field dengan aria-invalid/aria-describedby, sementara burung dan nomor yang diketik tetap dipulihkan lewat old input. Pengguna dapat memilih nomor lain lalu mengirim ulang.
+
+Pendaftaran lama yang nomornya kosong menyediakan kartu “Pilih nomor gantangan Anda” di detail pendaftaran sebelum penjurian dimulai. Setelah berhasil, kartu pengisian hilang dan nomor ditampilkan sebagai tersimpan/terkunci. Nomor tidak mengubah status verifikasi pembayaran. Tidak ada form Admin untuk menyetujui nomor.
+
+# Banner pada Detail Event Dashboard
+
+Detail event Owner dan Admin menampilkan komponen `event-banner` dengan gambar penuh memakai object-contain agar teks poster tidak terpotong, tinggi maksimum responsif, alt text nama event, serta tautan Ganti/Unggah banner menuju Edit Event. Jika banner_path kosong, tampil petunjuk “Banner event belum diunggah”, bukan ruang gambar kosong. Storage public dan URL banner yang sudah ada tetap digunakan; gambar privat pembayaran tidak dipublikasikan.
+
+Pemeriksaan lintas halaman memperluas banner ke kartu event landing, daftar dan detail publik, daftar Owner/Admin, daftar event/agenda dashboard peserta, workspace event Owner, serta preview Edit Event. Komponen `event-artwork` menyamakan gambar object-contain dan fallback “Banner belum tersedia”. Detail publik menampilkan poster sebagai panel tersendiri tanpa opacity/lapisan gelap yang menyamarkan poster. Data featured event landing kini menyertakan banner_url. Halaman penjurian/pendaftaran yang menampilkan foto burung tetap memakai foto burung, bukan menggantinya dengan banner.
+
+Tes HTTP terotorisasi memeriksa URL dan alt gambar pada seluruh halaman event di atas serta upload/penggantian/fallback/privasi draft. Browser automation host masih tidak dapat diakses pada pemeriksaan ini; tidak ada klaim verifikasi visual browser. Banner hanya tampil bila file sudah diunggah dan banner_path event tersimpan; file lama yang tidak terhubung ke event tidak dipasang otomatis.

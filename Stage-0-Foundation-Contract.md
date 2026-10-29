@@ -267,6 +267,8 @@ Keputusan berikut tidak menghalangi pembuatan fondasi umum, tetapi harus disetuj
 
 Status seluruh D-01 sampai D-11 adalah `PROPOSED` sampai direview pengguna.
 
+Pembaruan resmi Tahap 7 (21 Oktober 2026): D-04 disetujui minimum 3 Juri; D-05 pengganti Juri absen disetujui dengan preservasi riwayat dan tanpa mengesampingkan submitted; D-08 digantikan keputusan lempar dadu nyata dengan urutan dicatat Admin hanya pada kelompok draw. Tidak ada simulasi dadu/pemilihan acak. D-09 memakai safe default progres publik saja selama provisional; hasil FINAL per kelas dapat dipublikasikan. Rincian otoritatif di `TOPSIS.md` dan kontrak Tahap 7. Keputusan lain tidak otomatis dianggap disetujui oleh pembaruan ini.
+
 ---
 
 ## 12. Konflik dan Risiko yang Sudah Ditemukan

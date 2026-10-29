@@ -27,13 +27,13 @@
                 <div class='relative z-10 my-auto max-w-xl py-14'>
                     <div class='mb-8 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.18em] text-forest-100'>
                         <span class='size-2 rounded-full bg-gold-400'></span>
-                        Fondasi operasional lomba
+                        Portal kompetisi GantangScore
                     </div>
                     <h1 class='text-4xl font-extrabold leading-tight tracking-tight xl:text-5xl'>
                         Penilaian yang lebih tenang, dari meja panitia hingga peserta.
                     </h1>
                     <p class='mt-6 max-w-lg text-base leading-8 text-forest-100'>
-                        Satu ruang kerja untuk identitas pengguna, peran, dan akses yang aman—siap dikembangkan ke alur lomba pada tahap berikutnya.
+                        Daftarkan burung Anda, pantau verifikasi pembayaran, ikuti progres lomba, dan lihat hasil resmi dari penyelenggara.
                     </p>
 
                     <div class='mt-10 grid grid-cols-3 gap-3'>

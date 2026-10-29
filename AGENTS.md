@@ -1109,9 +1109,7 @@ preference = 0.5
 tie = true
 ```
 
-Tie-break rule is still unresolved.
-
-Do not invent a winner.
+Keputusan Owner pada Tahap 7: draw diselesaikan dengan lempar dadu nyata di lokasi lomba. Admin mencatat urutan hasilnya hanya di dalam kelompok seri, dengan konfirmasi dan audit. Nilai TOPSIS asli tidak diubah; sistem tidak mengocok dadu atau memilih pemenang otomatis.
 
 ---
 
@@ -2342,7 +2340,7 @@ Only request clarification when safe implementation truly depends on the missing
 11. Admin access is event-scoped.
 12. Judge access is class-scoped.
 13. Participant access is ownership-scoped.
-14. No manual rank override.
+14. No arbitrary manual rank override; the sole approved exception is recording real-life dice outcomes within a genuine tied TOPSIS group, with an immutable audit trail.
 15. Never guess unresolved rules.
 ```
 
@@ -2679,3 +2677,27 @@ If only a few rules are remembered, remember these:
 > **Reverb improves realtime UX but is never required for correctness.**
 
 > **Keep the Laravel + Blade modular monolith unless explicitly instructed otherwise.**
+
+---
+
+# 137. Approved Stage 7 Decisions — 21 Oktober 2026
+
+These explicit Owner decisions supersede older OPEN/PROPOSED minimum-judge and tie rules in earlier sections/documents:
+
+- Finalization requires at least 3 active judge assignments and complete submitted scores from every currently required judge for every eligible registration.
+- An absent judge may be replaced. Replacement is a dedicated event-scoped Admin action; preserve old assignment and drafts, revoke old assignment access, and require replacement to score independently. A judge with submitted evaluations cannot be silently replaced/excluded; the partial-submission replacement rule still needs a separate explicit decision.
+- TOPSIS draws are settled by real-life dice. The Admin records the actual ordering of exactly the tied group, with confirmation and a note. This is not permission to edit scores or reorder unequal TOPSIS results. The original coefficients and shared ranks remain archived.
+- Draw decisions are tied to the ranking source snapshot. Changed source invalidates their use for finalization. Unresolved draws block finalization; no automatic dice, random tie-break, or arbitrary manual rank override.
+- Certificates and realtime delivery remain Stage 8. Stage 7 dispatches `ResultFinalized` after commit as the integration boundary; do not add fake no-op certificate jobs.
+
+# 138. Stage 8 Implementation — 29 Oktober 2026
+
+Stage 8 now implements the real `GenerateWinnerCertificates` job, private FINAL winner PDF access, and Reverb/Echo delivery. The Stage 7 note above describes the earlier integration boundary, not unfinished placeholder jobs. Read `Realtime.md` and `Stage-8-Realtime-Certificate-Contract.md` before modifying these areas. Certificates use configured prize ranks archived in FINAL and official dice-resolved order. Template signatures/stamps still await official assets.
+
+# 139. Stage 9 and Latest Review Instruction — 29 Oktober 2026
+
+The user explicitly authorized continuing to the next stage and will review after the remaining work finishes. This supersedes the earlier stop-after-Stage-8 gate. Stage 9 adds keyboard-accessible dashboard navigation, field/error associations, updated operational UI copy, guarded test database access, full HTTP lifecycle coverage, bounded-query regression tests, and real two-process MySQL contention tests. Read `Testing.md`, `Deployment.md`, and `Stage-9-Hardening-QA-Contract.md` for verification and limits. Never run the PHP main and concurrency suites concurrently; both use sipengantang_test. Browser host was unavailable, so do not claim visual browser checks at all viewports or production deployment passed.
+
+# 140. Approved Participant Gantangan Number — 29 Oktober 2026
+
+User explicitly chose participant-selected numbers without Admin approval. New registrations require a positive digit number, canonicalized (017 = 17), unique within their competition class. Legacy nullable registrations may fill their own empty number once before judging; no normal edit after selection. Use class row locks and the composite unique constraint. Duplicate choices must return a clear participant-facing field error. Payment verification remains separate. Do not auto-release reserved numbers on rejection/cancellation or invent a physical number range from the registration quota. This supersedes earlier unresolved/manual-Admin assignment notes.

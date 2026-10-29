@@ -52,3 +52,7 @@
         color: var(--color-forest-900);
     }
 }
+
+@media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+}

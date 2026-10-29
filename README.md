@@ -1,58 +1,64 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# SIPENGANTANG / GantangScore
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi Laravel + Blade untuk penyelenggaraan lomba gantangan burung: event, kelas, pendaftaran, pembayaran manual, penjurian, peringatan/DQ, TOPSIS per kelas, hasil FINAL dan piagam PDF.
 
-## About Laravel
+Database adalah sumber kebenaran. Reverb memperbarui tampilan; semua penulisan melalui HTTP berotorisasi. Redis tidak dibutuhkan untuk MVP.
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Persiapan lokal
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Gunakan versi PHP yang memenuhi `composer.lock`, Composer, Node/npm, dan MySQL. Jalankan perintah dari direktori repository. File `.env`, dokumen privat dan database asli tidak masuk Git.
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
-
-```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+```powershell
+composer install
+npm install
+Copy-Item .env.example .env
+php artisan key:generate
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+Salin `.env.example` hanya pada instalasi baru. Pada instalasi yang ada, pertahankan `.env` dan APP_KEY. Atur koneksi MySQL development ke database aplikasi; database tes harus terpisah bernama `sipengantang_test`.
 
-## Contributing
+```powershell
+php artisan migrate
+php artisan reverb:install
+npm run build
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Installer Reverb menghasilkan kredensial lokal dan variabel Vite. Bila mengubahnya, jalankan build lagi. Seeder demo hanya untuk development baru: `php artisan db:seed`. Jangan jalankan seeder pada data yang sudah digunakan; seeder demo dapat memperbarui akun demo yang ada.
 
-## Code of Conduct
+## Menjalankan
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+Akun seeder lokal: Owner `owner@gmail.com`, Admin `albab@gmail.com`, Juri `juri@gmail.com`, Peserta `peserta@gmail.com`. Kata sandi seluruhnya `123` (konfigurasi `GANTANGSCORE_DEMO_PASSWORD`).
 
-## Security Vulnerabilities
+Jalankan di terminal terpisah:
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```powershell
+php artisan serve
+php artisan queue:work database --tries=3 --timeout=60
+php artisan reverb:start
+npm run dev
+```
 
-## License
+`npm run dev` dapat diganti `npm run build` untuk asset tersimpan. Worker memproses ranking provisional, piagam dan broadcast. Aplikasi tetap dapat dipakai tanpa Reverb; pembaruan status beralih ke HTTP setiap 20 detik.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Pengujian
+
+```powershell
+composer test
+npm test
+composer test:concurrency
+npm run build
+```
+
+Jalankan tes PHP utama dan konkurensi **bergantian**, karena memakai database tes yang sama. Tes dapat mereset database tes tersebut. Pengaman menolak environment/database lain sebelum refresh. Jangan memakai database development/produksi sebagai database tes. Uji konkurensi memerlukan akses MySQL `information_schema.innodb_trx`; lihat [Testing.md](Testing.md).
+
+## Dokumen acuan
+
+- [AGENTS.md](AGENTS.md): aturan kerja repository.
+- [PRD.md](PRD.md), [Design.md](Design.md), [Architecture.md](Architecture.md), [Schema.md](Schema.md): kontrak produk dan teknis.
+- [TOPSIS.md](TOPSIS.md): input, rumus, draw dadu nyata dan finalisasi.
+- [Realtime.md](Realtime.md): kanal, privasi, fallback dan recovery.
+- [Testing.md](Testing.md): cakupan, perintah dan batas verifikasi.
+- [Deployment.md](Deployment.md): persiapan rilis, backup, queue, Reverb dan pemulihan.
+- [Tahap 9](Stage-9-Hardening-QA-Contract.md): hasil hardening, pengujian dan pekerjaan yang membutuhkan lingkungan browser/hosting.
+
+Implementasi MVP sampai Tahap 9 tersedia untuk review. Repository belum dideploy oleh agen. Tanda tangan/stempel piagam menunggu aset resmi; pemeriksaan visual browser seluruh viewport belum dapat dilakukan karena browser automation host tidak tersedia.

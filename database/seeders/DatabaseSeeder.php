@@ -22,10 +22,10 @@ class DatabaseSeeder extends Seeder
         }
 
         $demoUsers = [
-            ['name' => 'Owner GantangScore', 'email' => 'owner@sipengantang.test', 'role' => UserRole::Owner],
-            ['name' => 'Admin Lomba', 'email' => 'admin@sipengantang.test', 'role' => UserRole::Admin],
-            ['name' => 'Juri Demo', 'email' => 'juri@sipengantang.test', 'role' => UserRole::Judge],
-            ['name' => 'Peserta Demo', 'email' => 'peserta@sipengantang.test', 'role' => UserRole::Participant],
+            ['name' => 'Owner GantangScore', 'email' => 'owner@gmail.com', 'role' => UserRole::Owner],
+            ['name' => 'Albab', 'email' => 'albab@gmail.com', 'role' => UserRole::Admin],
+            ['name' => 'Juri Demo', 'email' => 'juri@gmail.com', 'role' => UserRole::Judge],
+            ['name' => 'Peserta Demo', 'email' => 'peserta@gmail.com', 'role' => UserRole::Participant],
         ];
 
         foreach ($demoUsers as $demoUser) {

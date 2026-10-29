@@ -877,7 +877,7 @@ Schema:
 | participant_id            | BIGINT UNSIGNED |   No |                     |
 | bird_id                   | BIGINT UNSIGNED |   No |                     |
 | registration_number       | VARCHAR(60)     |   No | Public/human ID     |
-| gantangan_number          | VARCHAR(50)     |  Yes | TBD assignment rule |
+| gantangan_number          | VARCHAR(50)     |  Yes | Participant choice; legacy nullable |
 | registration_fee_snapshot | BIGINT UNSIGNED |   No | Fee at registration |
 | status                    | VARCHAR(40)     |   No |                     |
 | registered_at             | DATETIME        |   No |                     |
@@ -901,6 +901,7 @@ Constraints:
 
 ```text
 UNIQUE(registration_number)
+UNIQUE(competition_class_id, gantangan_number)
 INDEX(competition_class_id, status)
 INDEX(participant_id)
 INDEX(bird_id)
@@ -970,21 +971,23 @@ gantangan_number VARCHAR(50) NULL
 
 Reason nullable:
 
-Assignment business rule has not been finalized.
+Legacy registrations may not have a number. New participant registrations require a chosen number under the approved rule below.
 
-No UNIQUE constraint globally.
-
-If uniqueness is required later, scope likely:
+No global UNIQUE constraint. User decision, 29 Oktober 2026: enforce:
 
 ```text
 competition_class_id + gantangan_number
 ```
 
-Do not add until business rule is confirmed.
+Migration `2026_10_29_205837_add_unique_gantangan_number_per_class_to_registrations_table.php` adds `registrations_class_gantangan_unique`. Null values remain allowed for historical rows; MySQL permits multiple nulls. All statuses reserve a non-null number within the class. Fresh values are canonical positive digit strings, maximum 50 characters; leading zeros are stripped before persistence. Existing zero-padded numbers are treated as occupied without rewriting historical values.
+
+The migration checks for duplicate class/canonical-number groups first and stops for manual review if found; it does not delete or reassign history. Application actions lock the class before checking and saving, with the unique index as an additional database boundary. A missing legacy number can be filled once before judging; filled numbers and FINAL snapshots are not edited. Registration fee/payment status is unaffected.
 
 ---
 
 # 20. Table: payment_submissions
+
+Implementasi Tahap 4 memakai migration `2026_10_21_205259_create_payment_submissions_table.php` sesuai kontrak tabel di bawah. Bukti disimpan sebagai path relatif pada disk `private`. Batas satu percobaan aktif ditegakkan melalui transaksi dan penguncian kelas, pendaftaran, lalu pembayaran; tidak menambah kolom event atau menimpa percobaan lama.
 
 Purpose:
 
@@ -1074,6 +1077,10 @@ Do not overwrite #1 or #2.
 
 # 22. Table: judge_assignments
 
+Tahap 7 menambahkan migration `2026_10_21_222754_add_replacement_history_to_judge_assignments_table.php`: `replaced_at DATETIME NULL`, `replacement_assignment_id BIGINT UNSIGNED NULL` (FK self, RESTRICT), `replacement_note TEXT NULL`. Penugasan aktif adalah `replaced_at IS NULL`. Keunikan kelas/Juri tetap dipertahankan; penugasan lama tidak dihapus atau diaktifkan ulang. Draft lama tidak diwariskan ke pengganti.
+
+Implementasi Tahap 5: `2026_10_21_212524_create_judge_assignments_table.php`. Penugasan unik per kelas/Juri; tidak membuat tabel autentikasi terpisah. Indeks `judge_id` didukung foreign key MySQL.
+
 Purpose:
 
 Which judge can judge which class.
@@ -1106,6 +1113,8 @@ ON DELETE RESTRICT
 ---
 
 # 23. Table: judge_evaluations
+
+Implementasi Tahap 5: `2026_10_21_212527_create_judge_evaluations_table.php`. Status memakai enum PHP `EvaluationStatus`; waktu submit ditetapkan server. Indeks komposit kelas tidak ditambahkan karena kelas ditelusuri melalui pendaftaran.
 
 Purpose:
 
@@ -1157,6 +1166,8 @@ ON DELETE RESTRICT
 ---
 
 # 24. Table: judge_scores
+
+Implementasi Tahap 5: `2026_10_21_212529_create_judge_scores_table.php`. Kriteria harus berasal dari kelas pendaftaran evaluasi. Nilai disimpan sebagai integer dalam rentang snapshot 1-10. Batas unik berlaku per evaluasi/kriteria dan indeks kriteria didukung foreign key MySQL.
 
 Purpose:
 
@@ -1245,6 +1256,8 @@ Purpose:
 
 Warning and disqualification history.
 
+Implementasi Tahap 6: `2026_10_21_215252_create_violations_table.php`, model `Violation`, enum `ViolationAction` dan `ViolationReasonCode`. Foreign key `judge_id` menyediakan indeks Juri pada MySQL; indeks komposit pendaftaran/tindakan dan indeks alasan dibuat eksplisit. Tidak ada `event_id` redundan, tabel reversal, atau perubahan nilai setelah DQ. `reason` menyimpan label alasan saat kejadian; `OTHER` menyimpan penjelasan petugas. Catatan wajib untuk semua DQ, termasuk eskalasi, dan opsional untuk peringatan pertama.
+
 Schema:
 
 | Column          | Type            |            Null |
@@ -1325,6 +1338,8 @@ All history remains stored.
 ---
 
 # 28. Table: ranking_runs
+
+Implementasi Tahap 7: migration `2026_10_21_222748_create_ranking_runs_table.php`. Selain kontrak dasar, menyimpan `algorithm VARCHAR(30)`, `algorithm_version VARCHAR(30)`, `source_hash CHAR(64)`, dan `calculation_snapshot JSON`, semuanya wajib. Hash mengikat snapshot kriteria, daftar Juri, peserta eligible, nilai submitted, identitas publik, serta hadiah. Snapshot calculation memuat matriks, normalisasi, ideal, hasil TOPSIS asli, dan salinan keputusan draw pada FINAL. Run bersifat append-only.
 
 Purpose:
 
@@ -1415,6 +1430,8 @@ Snapshot must be self-contained enough to reproduce calculation.
 
 # 30. ranking_runs.input_snapshot
 
+Format implementasi Tahap 7 adalah object versioned oleh `algorithm_version`, bukan sekadar daftar: `{minimum_judges, judge_ids, class, prizes, registrations}`. Setiap registration menyimpan ID burung/pendaftaran, identitas publik saat perhitungan, rata-rata presisi penuh, serta daftar `{id, judge_id, submitted_at, scores}` untuk setiap evaluasi submitted yang dipakai. Tidak menyimpan kontak privat/pembayaran/catatan Juri. Halaman publik menerima proyeksi terpisah, bukan object ini.
+
 Example:
 
 ```json
@@ -1440,6 +1457,8 @@ Do not store payment/private profile data in ranking snapshot.
 
 # 31. Table: ranking_results
 
+Implementasi Tahap 7: migration `2026_10_21_222750_create_ranking_results_table.php`. `entry_snapshot JSON NOT NULL` menyimpan nama burung/peserta, jenis burung, nomor pendaftaran/gantangan untuk sejarah tampilan; halaman final tidak memakai identitas live. `rank` menggunakan **INT UNSIGNED nullable**, menggantikan rekomendasi SMALLINT agar konsisten dengan kuota kelas sampai 100.000. Angka hasil tetap DECIMAL(16,10). Hasil tidak dapat diperbarui/dihapus melalui model/domain.
+
 Purpose:
 
 Per-participant result inside a ranking run.
@@ -1455,7 +1474,7 @@ Schema:
 | positive_distance  | DECIMAL(16,10)    |   No |
 | negative_distance  | DECIMAL(16,10)    |   No |
 | preference_value   | DECIMAL(16,10)    |   No |
-| rank               | SMALLINT UNSIGNED |  Yes |
+| rank               | INT UNSIGNED      |  Yes |
 | is_tied            | BOOLEAN           |   No |
 | created_at         | TIMESTAMP         |  Yes |
 | updated_at         | TIMESTAMP         |  Yes |
@@ -1508,6 +1527,22 @@ UI can map code using criteria snapshot from ranking run.
 
 # 33. Rank and Tie
 
+Keputusan Owner Tahap 7 menggantikan status OPEN di uraian awal berikut: hasil matematis seri tetap diarsipkan dengan shared competition rank (1,1,3) dan `is_tied=true`. Urutan FINAL berasal dari catatan lempar dadu nyata oleh Admin, hanya di dalam kelompok seri. Koefisien yang sama pada presisi penyimpanan 10 desimal dikelompokkan sebagai draw. Semua draw wajib diselesaikan sebelum finalisasi.
+
+Tabel baru `ranking_tie_resolutions` (migration `2026_10_21_222752_create_ranking_tie_resolutions_table.php`):
+
+| Column | Type | Null |
+| --- | --- | --- |
+| id | BIGINT UNSIGNED PK | No |
+| ranking_run_id | BIGINT UNSIGNED FK ranking_runs, RESTRICT | No |
+| group_key | CHAR(64), hash kelompok ID peserta seri | No |
+| ordered_registration_ids | JSON, urutan hasil undian asli | No |
+| note | TEXT, catatan kejadian/total dadu di lokasi | No |
+| created_by | BIGINT UNSIGNED FK users, RESTRICT | No |
+| created_at / updated_at | TIMESTAMP | Yes |
+
+UNIQUE(ranking_run_id, group_key). Keputusan append-only dan dicatat Admin server-side. FINAL menyalin keputusan yang hash sumbernya masih cocok ke `calculation_snapshot.draw_resolutions`; keputusan lama tidak dihapus bila sumber berubah. Tidak ada kolom manual override rank di registration atau perubahan skor untuk menyelesaikan draw.
+
 If ranking is deterministic and no tie:
 
 ```text
@@ -1524,20 +1559,14 @@ is_tied = true
 
 Important:
 
-Business tie-break rule is still OPEN.
-
-Do not invent a winner.
-
-Recommended implementation until decision:
+Approved business tie-break: actual dice outcomes recorded by the assigned Admin. The mathematical draw grouping remains:
 
 ```text
-same preference within configured numeric tolerance
+same preference at DECIMAL(16,10) precision
 → same rank group / is_tied = true
 ```
 
-Finalization may be blocked if a prize position has unresolved tie.
-
-This should remain configurable because final business decision is pending.
+Finalization is blocked while any draw group remains unresolved. Do not invent a winner or apply arbitrary manual reordering outside that group.
 
 ---
 
@@ -1556,9 +1585,10 @@ Schema:
 | competition_class_id | BIGINT UNSIGNED   |   No |
 | registration_id      | BIGINT UNSIGNED   |   No |
 | ranking_result_id    | BIGINT UNSIGNED   |   No |
-| rank                 | SMALLINT UNSIGNED |   No |
+| rank                 | INT UNSIGNED      |   No |
 | file_path            | VARCHAR(500)      |   No |
-| template_version     | VARCHAR(30)       |  Yes |
+| template_version     | VARCHAR(30)       |   No |
+| metadata_snapshot    | JSON              |   No |
 | generated_at         | DATETIME          |   No |
 | created_at           | TIMESTAMP         |  Yes |
 | updated_at           | TIMESTAMP         |  Yes |
@@ -1588,6 +1618,12 @@ ON DELETE RESTRICT
 ```
 
 Certificate must reference FINAL ranking result.
+
+Implementasi Tahap 8 (29 Oktober 2026): hanya peringkat hadiah yang tercatat pada `ranking_runs.input_snapshot.prizes` milik run FINAL COMPLETED, dengan kelas FINALIZED. Rank mengikuti urutan resmi setelah keputusan draw, bukan shared rank matematis awal. Policy unduhan memvalidasi rantai result–registration–class–event serta rank sebelum memeriksa pemilik/penugasan.
+
+`metadata_snapshot` menyimpan nomor piagam, nama peserta/burung/jenis, event/kelas, tanggal event, penyelenggara, rank, dan waktu finalisasi. Record piagam immutable. File privat ber-UUID; UNIQUE result mencegah duplikasi. Retry hanya mengembalikan file yang ada atau memulihkan file hilang memakai metadata piagam tersimpan. `CERTIFICATE_GENERATED` dicatat sekali saat penerbitan pertama.
+
+FINAL baru menyimpan `class.event_start_at` dan `class.organizer_name` di input snapshot. FINAL lama Tahap 7 tidak diubah: tanggal event saat penerbitan pertama dan nama aplikasi dipakai bila metadata tersebut belum tersedia, lalu dibekukan dalam metadata piagam. Tanggal historis FINAL lama perlu diperiksa panitia sebelum menjalankan pembuatan piagam.
 
 ---
 

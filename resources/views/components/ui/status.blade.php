@@ -1,6 +1,6 @@
-@if (session('status'))
+@if (session('status') || session('success'))
     <div role='status' class='rounded-xl border border-forest-200 bg-forest-50 px-4 py-3 text-sm font-semibold text-forest-800'>
-        {{ session('status') }}
+        {{ session('status') ?? session('success') }}
     </div>
 @endif
 

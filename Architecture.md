@@ -335,6 +335,7 @@ mysql
 - Alpine.js untuk UI interaction ringan.
 - Tailwind CSS jika dipilih saat bootstrap project.
 - Package PDF yang stabil dan kompatibel Laravel.
+- Implementasi Tahap 4 menggunakan `barryvdh/laravel-dompdf` untuk bukti pendaftaran satu dokumen per permintaan. Rendering dilakukan setelah verifikasi tersimpan, di luar transaksi, dengan remote resource, PHP, dan JavaScript dinonaktifkan. Pekerjaan PDF berat tetap menjadi kandidat queue.
 - PHPUnit / Pest sesuai setup project.
 
 ## Not Required for MVP
@@ -1418,6 +1419,10 @@ Database may not fully enforce check in every environment; application validatio
 
 # 35. Score Submission Rules
 
+Implementasi Tahap 5 menggunakan `SaveEvaluationAction` dengan dua endpoint terpisah untuk draft dan submit. Urutan penguncian penulisan nilai adalah kelas, pendaftaran, lalu evaluasi; validasi snapshot dan status diperiksa di dalam transaksi sebelum skor ditulis. `JudgeScoreSubmitted` memakai `ShouldDispatchAfterCommit`. Konsumen ranking/realtime akan ditambahkan pada tahap masing-masing.
+
+Admin menggunakan `StartClassJudgingAction` untuk membuka kelas secara eksplisit; event dipindahkan ke `ONGOING` bila masih `UPCOMING`. Progress 100% tidak mengubah status kelas secara otomatis. Aksi mulai mengunci event lalu kelas untuk menyelaraskan status event saat beberapa kelas dibuka bersamaan.
+
 To submit:
 
 1. Judge is assigned to class.
@@ -1552,6 +1557,12 @@ DIRECT_DQ
 ---
 
 # 40. Disqualification Transaction
+
+Implementasi Tahap 6 memakai `RecordViolationAction` dan `ViolationRuleService`. Urutan lock sama dengan penulisan nilai: kelas lalu pendaftaran. Penugasan, status event/kelas/pendaftaran, dan jumlah peringatan diperiksa ulang di dalam transaksi. Peringatan dihitung per pendaftaran, bukan per alasan atau per Juri. `OTHER` mengikuti intensi endpoint khusus (peringatan atau DQ berat) dan selalu memerlukan penjelasan; alasan tetap dipilih melalui kode, bukan pencocokan teks.
+
+Semua DQ memerlukan catatan dan konfirmasi eksplisit. Form peringatan lama yang kini seharusnya mengeskalasi tidak langsung mengubah status: server menolak jika catatan/konfirmasi DQ belum ada. Audit, pelanggaran, status, dan waktu DQ disimpan atomik. Event `WarningCreated` / `ParticipantDisqualified` hanya membawa ID dan memakai `ShouldDispatchAfterCommit`. Nilai draft maupun submitted tidak diubah. Progres database segera mengecualikan DQ melalui filter `VERIFIED`.
+
+Konsumen recalculation ranking belum diimplementasikan pada Tahap 6 karena domain ranking adalah Tahap 7. Tahap 7 wajib mengecualikan DQ dari input dan menghubungkan event DQ ke pembaruan provisional; broadcast menyusul Tahap 8. Tidak ada job kosong yang seolah-olah telah menghitung ranking.
 
 ```text
 Judge requests DQ
@@ -2000,6 +2011,12 @@ Finalization must recalculate from source data.
 
 # 54. Finalization Preconditions
 
+Keputusan Owner Tahap 7, 21 Oktober 2026, menggantikan pertanyaan terbuka di bagian ini: minimal **3 Juri aktif**, seluruh evaluasi lengkap dari semua penugasan aktif pada setiap peserta eligible, dan semua draw terselesaikan. `RankingInputBuilder` memusatkan validasi tersebut. Juri absen diganti melalui `ReplaceAbsentJudgeAction`, bukan mengurangi denominator. Penugasan lama tetap disimpan dan hanya Juri tanpa nilai submitted yang dapat diganti tanpa memerlukan keputusan koreksi nilai tambahan.
+
+Implementasi `FinalizeClassResultAction` mengunci kelas, mengotorisasi Admin event, membaca raw submitted scores terbaru, menghitung rata-rata dan TOPSIS dari awal, memverifikasi keputusan draw terhadap hash sumber, menulis FINAL dan hasilnya, mengunci kelas sebagai FINALIZED, serta mencatat audit dalam satu transaksi. `ResultFinalized` dikirim setelah commit. Tidak ada promosi provisional lama atau unfinalize. Job sertifikat dan broadcast adalah integrasi Tahap 8.
+
+`TopsisCalculator` murni tanpa database; `RankingInputBuilder` menyiapkan input; `RankingService` menyimpan snapshot dan menerapkan urutan draw yang telah divalidasi. Seluruh rumus tetap hanya di calculator. Draw hanya memengaruhi urutan kelompok seri, bukan koefisien, matriks, atau peserta lain. Semua snapshot/model hasil append-only. Pengubahan kelas/hadiah mengunci kelas dan ditolak setelah FINALIZED.
+
 At minimum:
 
 - Competition class exists.
@@ -2010,15 +2027,7 @@ At minimum:
 - Criteria weights valid.
 - Judge score completeness passes currently defined business rule.
 
-Open Question:
-
-Minimum number of judges / incomplete judge behavior is still undecided.
-
-Until decided:
-
-**Agent must not guess a minimum judge count.**
-
-Prefer implementing a configurable/central validator that can later accept the rule.
+Approved minimum: 3 active judges, with every currently required submitted evaluation complete. A missing judge is replaced explicitly, never silently omitted. The rule is centralized in `RankingInputBuilder`; partial-submission replacement still requires an explicit future decision.
 
 ---
 
@@ -2141,7 +2150,7 @@ birds/{owner_id}/{bird_id}/{uuid}.webp
 
 payments/{registration_id}/{uuid}.jpg
 
-certificates/{event_id}/{class_id}/{registration_id}.pdf
+certificates/{event_id}/{class_id}/{uuid}.pdf
 
 registration-proofs/{registration_id}.pdf
 ```
@@ -3228,6 +3237,8 @@ It should NOT:
 ---
 
 # 104. Public Ranking Rule
+
+Implementasi Tahap 7 menyediakan endpoint hasil per kelas yang hanya membaca FINAL COMPLETED pada kelas FINALIZED dalam event dipublikasikan. Proyeksi publik hanya identitas publik snapshot, peringkat, koefisien, penanda draw, dan hadiah. Tidak ada raw scores, matriks, catatan undian, kontak privat, atau perhitungan TOPSIS pada GET publik. Event ditutup melalui aksi eksplisit Admin setelah semua kelas final/dibatalkan, bukan berdasarkan waktu.
 
 During ongoing event:
 
@@ -4766,3 +4777,31 @@ KEEP REALTIME OPTIONAL FOR CORRECTNESS.
 KEEP HISTORY AUDITABLE.
 KEEP THE MVP SIMPLE.
 ```
+
+# 173. Implementasi Tahap 8 — 29 Oktober 2026
+
+Kontrak runtime realtime ada di `Realtime.md`; contoh kanal/payload konseptual pada bagian lama harus dibaca bersama kontrak aktual tersebut. Broadcast setelah commit hanya membawa ID sebagai sinyal invalidasi. Snapshot HTTP memeriksa otorisasi terbaru; publik hanya memperoleh progres dan tautan FINAL. Database queue dipilih eksplisit untuk broadcast dan piagam agar kegagalan Reverb tidak memblokir operasi, termasuk saat default queue sync. UI memakai polling fallback 20 detik, memulihkan status saat reconnect, dan tidak menghapus input Juri.
+
+`ResultFinalized` memicu listener `QueueWinnerCertificates`. Job unique per run, tiga percobaan, memproses peringkat hadiah dari snapshot FINAL lewat `GenerateCertificateAction`. Action mengunci result, memvalidasi eligibility, membuat PDF dengan renderer baru per dokumen, menyimpan UUID pada disk private, lalu record/snapshot/audit dalam transaksi. Jika record/audit gagal, file baru dibersihkan. Retry tidak menimpa piagam yang sudah ada; file hilang dipulihkan dari metadata piagam yang sama. Job dijalankan setelah transaksi finalisasi selesai; file storage bukan bagian dari transaksi database dan bukan jaminan atomisitas lintas storage/DB pada hard crash.
+
+Tabel `certificates` merujuk result FINAL dengan unique FK, snapshot metadata dan template version. Policy memvalidasi rantai result/registration/class/event/rank, lalu kepemilikan peserta atau akses Owner/Admin event. Preview/unduh hanya mengalirkan file privat; GET tidak merender atau menghitung ranking. Piagam yang belum siap diberi status pending/503, dan Admin dapat mengantrekan pembuatan/pemulihan dari halaman hasil FINAL. Tidak ada endpoint piagam publik.
+
+Metadata identitas, kelas, hadiah, serta peringkat resmi termasuk keputusan dadu diambil dari FINAL. FINAL baru juga menyimpan tanggal event dan penyelenggara. FINAL lama Tahap 7 tidak ditulis ulang: tanggal event terkini/nama aplikasi dibekukan saat penerbitan pertama bila snapshot lama tidak memilikinya. Panitia perlu memeriksa tanggal event historis sebelum backfill. Template v1 A4 landscape tanpa tanda tangan/stempel rekaan; aset resmi masih menunggu pengguna.
+
+# 174. Hardening dan Operasional Tahap 9
+
+Arsitektur/domain/schema produksi tetap. Tests\TestDatabaseGuard dijalankan sebelum database-refresh traits dan di harness child untuk menolak database/environment non-tes. Suite contention opt-in memakai dua proses PHP/MySQL nyata yang harus teramati LOCK WAIT sebelum dilepas; suite reguler dan contention wajib berurutan. Pengujian alur HTTP menyambungkan seluruh fitur sampai FINAL, PDF dan event selesai; query regression membatasi pertumbuhan query pada progres publik/daftar peserta Juri.
+
+Panduan instalasi, backup/restore, worker, Reverb/proxy dan batas readiness ada di `README.md`, `Testing.md`, serta `Deployment.md`. Tidak ada deploy atau reset database aplikasi pada Tahap 9. Verifikasi visual browser dan target hosting belum dilakukan; jangan menyamakannya dengan pengujian otomatis yang sudah lulus.
+
+# 175. Konteks Navigasi Dashboard
+
+`DashboardNavigationComposer` memasok data ke layout dashboard yang sudah ada. `DashboardEventContext` menyaring event melalui event_admins; request-local memoization menghindari query konteks berulang antara controller workspace dan composer. Session hanya menyimpan ID pilihan, bukan pemberian izin; assignment diperiksa kembali setiap request. Pilihan event eksplisit di luar scope ditolak. Blade hanya merender link, daftar pilihan, dan state aktif.
+
+Workspace Admin menyediakan pilihan kelas terpaginasikan atau redirect ke endpoint event yang sudah berotorisasi. Workspace Owner hanya menampilkan ownedEvents. Navigasi tidak menambah hak Owner terhadap operasi penjurian Admin. Pemilihan akun Admin pada event Owner tetap memakai kontrak email; action memeriksa otorisasi Owner dan akun Admin aktif di transaksi dengan lock akun. Tidak ada tabel/role baru.
+
+# 176. Reservasi Nomor Gantangan Peserta
+
+`CreateRegistrationAction` menerima nomor wajib, mengunci kelas, memeriksa kepemilikan/jenis burung, duplikasi/kuota, lalu memvalidasi ketersediaan nomor melalui `GantanganNumberService` dan menyimpan nomor bersama registration dalam transaksi yang sama. Nomor tidak menunggu review Admin; pembayaran tetap PENDING_PAYMENT sampai alur pembayaran biasa.
+
+`ChooseGantanganNumberAction` menangani pendaftaran lama kosong, dengan lock kelas lalu registration, ownership policy, status sebelum judging dan pengisian sekali. Audit `GANTANGAN_NUMBER_CHOSEN` mencatat aktor/nomor/kelas. Class lock yang sama menyelaraskan reservasi nomor dengan dimulainya penjurian. Composite unique class/number melindungi database; konflik unik diterjemahkan ke field error. Tidak ada edit setelah nomor terisi atau pembaruan FINAL. Dua uji contention tambahan mencakup perebutan nomor pada pendaftaran baru dan pengisian nomor kosong lama.

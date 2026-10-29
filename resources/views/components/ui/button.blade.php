@@ -5,6 +5,7 @@
 
 @php
     $classes = match ($variant) {
+        'danger' => 'bg-red-700 text-white hover:bg-red-800 focus-visible:outline-red-700',
         'secondary' => 'border border-stone-200 bg-white text-stone-700 hover:border-forest-300 hover:bg-forest-50',
         'ghost' => 'text-stone-600 hover:bg-stone-100 hover:text-forest-800',
         default => 'bg-forest-600 text-white shadow-lg shadow-forest-900/10 hover:bg-forest-700',

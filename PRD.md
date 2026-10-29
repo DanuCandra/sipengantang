@@ -1308,6 +1308,8 @@ Halaman publik:
 /
 ```
 
+Landing page adalah website resmi brand/penyelenggara GantangScore. Fokus utamanya adalah agenda lomba, lokasi, kelas, pendaftaran, hasil, dan profil penyelenggara—bukan memperkenalkan aplikasi atau fitur software. Kapabilitas sistem hanya muncul secara kontekstual untuk membangun kepercayaan terhadap penyelenggaraan event.
+
 Bagian utama:
 
 ```text
@@ -1496,6 +1498,8 @@ Admin dapat melakukan finalisasi hanya apabila:
 - Peserta tersedia.
 - Penilaian telah memenuhi syarat.
 - Tidak ada proses penjurian yang masih dibutuhkan.
+- Minimal 3 Juri aktif; seluruh penugasan aktif menyelesaikan nilai setiap peserta eligible.
+- Seluruh draw sudah diselesaikan lewat lempar dadu nyata dan dicatat Admin sesuai keputusan Tahap 7.
 
 Saat finalisasi:
 
@@ -2098,7 +2102,7 @@ Sistem menandai:
 TIE
 ```
 
-dan tidak mengambil keputusan tie-break secara otomatis sampai peraturan tie-break ditentukan.
+Keputusan Owner, 21 Oktober 2026: peserta draw melakukan lempar dadu nyata di lokasi lomba; total tertinggi menang. Admin mencatat urutan hasil undian pada kelompok peserta yang seri, disertai catatan dan konfirmasi. Sistem tidak melempar dadu dan tidak memilih pemenang secara acak. Jika hasil lemparan masih seri, hasil draw belum dapat dicatat sebagai urutan final. Nilai TOPSIS asli dan riwayat undian tetap disimpan.
 
 ---
 
@@ -2264,7 +2268,7 @@ Kemungkinan aturan yang perlu dipilih:
 - Keputusan juri.
 - Peringkat sama.
 
-Belum ditentukan.
+Diputuskan pada Tahap 7: lempar dadu nyata; Admin mencatat urutan resmi kelompok seri dengan audit, tanpa mengubah nilai TOPSIS. Semua draw harus diselesaikan sebelum finalisasi. Lihat `TOPSIS.md`.
 
 ---
 
@@ -2280,7 +2284,7 @@ Minimal 3 juri
 
 atau jumlah juri bebas.
 
-Belum ditentukan.
+Diputuskan pada Tahap 7: minimal 3 Juri aktif untuk finalisasi kelas. Seluruh Juri yang diwajibkan harus menyelesaikan evaluasi lengkap setiap peserta eligible. Ranking provisional boleh memakai evaluasi submitted yang tersedia, tetapi tidak resmi dan tidak dipublikasikan.
 
 ---
 
@@ -2292,7 +2296,7 @@ Jika sebuah kelas mempunyai tiga juri tetapi hanya dua yang dapat melakukan peni
 - Menunggu juri pengganti?
 - Tidak dapat difinalisasi?
 
-Belum ditentukan.
+Diputuskan pada Tahap 7: tersedia penggantian Juri absen oleh Admin event terkait. Penugasan lama/draft tetap tersimpan; akses penilaian lama dicabut, dan pengganti menilai sendiri seluruh peserta. Penggantian yang akan mengesampingkan nilai submitted tidak diizinkan tanpa keputusan khusus mengenai penggantian setelah penilaian parsial. Jumlah Juri tidak dikurangi diam-diam.
 
 ---
 
@@ -2338,14 +2342,9 @@ Requirement saat ini memastikan progres realtime tersedia, tetapi tingkat detail
 
 ## OQ-08 — Nomor Gantangan
 
-Nomor gantangan perlu ditentukan apakah:
+Diputuskan pengguna pada 29 Oktober 2026: peserta memilih nomor gantangan sendiri dan langsung memperoleh nomor tersebut tanpa verifikasi Admin. Nomor wajib diisi saat pendaftaran baru, unik per kelas, dan ditolak dengan pesan “Nomor gantangan sudah digunakan pada kelas ini. Silakan pilih nomor lain.” jika bertabrakan. Verifikasi pembayaran tetap berjalan terpisah.
 
-- Diinput manual admin.
-- Digenerate otomatis.
-- Dipilih peserta.
-- Ditentukan saat technical meeting.
-
-Belum ditentukan.
+Nomor memakai angka positif; awalan nol dinormalisasi (017 = 17). Rentang fisik gantangan belum ditetapkan, sehingga batas kuota peserta tidak dianggap otomatis sebagai batas nomor. Pendaftaran lama yang nomornya kosong dapat memilih sekali sebelum penjurian dimulai; nomor yang sudah terisi tidak dapat diganti melalui alur normal. Tidak ada pelepasan nomor otomatis ketika pembayaran ditolak atau status berubah; riwayat tetap dipertahankan.
 
 ---
 
@@ -2582,3 +2581,11 @@ TOPSIS dihitung masing-masing per Class
 ```
 
 Dengan demikian peserta Murai Batu Utama tidak dibandingkan dengan peserta Kacer, Cucak Hijau, atau kelas lainnya.
+
+# Implementasi Tahap 8 — Realtime dan Piagam (29 Oktober 2026)
+
+Progres kelas diperbarui langsung untuk publik, Owner/Admin event, dan Juri yang ditugaskan. Publik tetap tidak melihat nilai/ranking provisional. Indikator Connected, Reconnecting, dan Offline fallback menjelaskan koneksi; fallback memeriksa progres setiap 20 detik. Formulir HTTP tetap dapat digunakan ketika realtime terputus.
+
+Piagam hanya untuk posisi hadiah pada snapshot FINAL, mengikuti peringkat resmi setelah penyelesaian draw. Tidak semua peserta/rank otomatis memperoleh piagam dan tidak ada asumsi selalu tiga pemenang. Peserta membuka menu Piagam untuk melihat/cetak/unduh miliknya; status menunggu ditampilkan selama queue belum selesai. Admin event dapat mengantrekan pembuatan/pemulihan dari hasil FINAL, tanpa mengubah hasil resmi.
+
+Penerbitan berulang tidak menggandakan record atau menimpa dokumen yang sudah tersedia. File privat dan akses terotorisasi. Piagam v1 tanpa tanda tangan/stempel; format/aset resmi tetap pertanyaan terbuka. FINAL lama belum mempunyai tanggal/penyelenggara snapshot: panitia memeriksa tanggal event sebelum penerbitan pertama, lalu metadata dibekukan di piagam. Rincian kontrak dan review: `Stage-8-Realtime-Certificate-Contract.md`.

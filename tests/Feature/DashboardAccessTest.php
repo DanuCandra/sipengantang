@@ -12,15 +12,15 @@ class DashboardAccessTest extends TestCase
     use LazilyRefreshDatabase;
 
     /**
-     * @return array<string, array{string, string, string}>
+     * @return array<string, array{string, string, string, string}>
      */
     public static function roleDashboardProvider(): array
     {
         return [
-            'owner' => ['owner', 'owner.dashboard', '/owner/dashboard'],
-            'admin' => ['admin', 'admin.dashboard', '/admin/dashboard'],
-            'judge' => ['judge', 'judge.dashboard', '/judge/dashboard'],
-            'participant' => ['participant', 'participant.dashboard', '/participant/dashboard'],
+            'owner' => ['owner', 'owner.dashboard', '/owner/dashboard', 'dashboard.index'],
+            'admin' => ['admin', 'admin.dashboard', '/admin/dashboard', 'dashboard.index'],
+            'judge' => ['judge', 'judge.dashboard', '/judge/dashboard', 'judge.classes.index'],
+            'participant' => ['participant', 'participant.dashboard', '/participant/dashboard', 'participant.dashboard'],
         ];
     }
 
@@ -29,6 +29,7 @@ class DashboardAccessTest extends TestCase
         string $factoryState,
         string $routeName,
         string $routePath,
+        string $viewName,
     ): void {
         $user = User::factory()->{$factoryState}()->create();
 
@@ -39,8 +40,7 @@ class DashboardAccessTest extends TestCase
         $this->actingAs($user)
             ->get(route($routeName))
             ->assertOk()
-            ->assertViewIs('dashboard.index')
-            ->assertViewHas('roles');
+            ->assertViewIs($viewName);
     }
 
     public function test_multi_role_redirect_uses_documented_priority(): void
@@ -92,7 +92,10 @@ class DashboardAccessTest extends TestCase
         $response = $this->get(route('home'));
 
         $response->assertOk()
+            ->assertViewIs('welcome')
+            ->assertViewHas('featuredEvent', null)
             ->assertSee('GantangScore')
-            ->assertSee('Penilaian lomba');
+            ->assertSee('Panggung berkelas')
+            ->assertSee('Seri event berikutnya sedang kami siapkan.');
     }
 }

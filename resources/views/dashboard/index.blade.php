@@ -11,7 +11,7 @@
             </div>
 
             <div class='w-full rounded-2xl border border-stone-200 bg-white px-4 py-3 shadow-sm sm:w-auto sm:min-w-44'>
-                <p class='text-xs font-bold uppercase tracking-wider text-stone-400'>Status akses</p>
+                <p class='text-xs font-bold uppercase tracking-wider text-stone-600'>Status akses</p>
                 <p class='mt-1 flex items-center gap-2 text-sm font-extrabold text-forest-800'>
                     <span class='size-2 rounded-full bg-forest-500'></span>
                     {{ $userStatus }}
@@ -23,19 +23,32 @@
             <article class='rounded-2xl border border-stone-200 bg-white p-5 shadow-sm sm:p-6'>
                 <div class='flex items-start justify-between gap-4 border-b border-stone-100 pb-5'>
                     <div>
-                        <p class='text-xs font-extrabold uppercase tracking-[0.18em] text-forest-600'>Fondasi sistem</p>
-                        <h2 class='mt-2 text-xl font-extrabold tracking-tight text-stone-900'>Tahap 1 siap direview</h2>
+                        <p class='text-xs font-extrabold uppercase tracking-[0.18em] text-forest-600'>Operasional lomba</p>
+                        <h2 class='mt-2 text-xl font-extrabold tracking-tight text-stone-900'>{{ $area === 'Owner' ? 'Kelola event dan tim Anda' : 'Siapkan lomba hingga hasil resmi' }}</h2>
                     </div>
-                    <span class='rounded-full bg-forest-50 px-3 py-1.5 text-xs font-extrabold text-forest-700'>Selesai</span>
                 </div>
 
-                <div class='mt-2 divide-y divide-stone-100'>
-                    @foreach ([
+                @php
+                    $dashboardItems = $area === 'Owner' ? [
+                        ['Manajemen event', 'Buat, edit, publikasikan, dan pantau seluruh event milik Anda.'],
+                        ['Penugasan admin', 'Hubungkan akun Admin secara spesifik ke setiap event.'],
+                        ['Kontrol akses', 'Admin hanya dapat membuka event yang benar-benar ditugaskan.'],
+                        ['Riwayat aktivitas', 'Perubahan penting tersimpan sebagai audit operasional.'],
+                    ] : ($area === 'Admin' ? [
+                        ['Event ditugaskan', 'Kelola informasi event sesuai penugasan dari Owner.'],
+                        ['Kelas kompetisi', 'Atur jenis burung, biaya, kuota, dan jadwal kelas.'],
+                        ['Peserta dan pembayaran', 'Tinjau pendaftaran, verifikasi bukti transfer, dan pantau peserta.'],
+                        ['Penjurian dan hasil', 'Pantau progres Juri, selesaikan draw, finalisasi hasil, dan terbitkan piagam pemenang.'],
+                    ] : [
                         ['Autentikasi', 'Login, logout, registrasi peserta, dan reset kata sandi.'],
                         ['Kontrol akses', 'Status akun, multi-role, middleware, dan gate dashboard.'],
                         ['Struktur aplikasi', 'Route terpisah per audiens dan komponen Blade reusable.'],
                         ['Kualitas', 'MySQL test database, factory, seeder, dan automated tests.'],
-                    ] as [$title, $copy])
+                    ]);
+                @endphp
+
+                <div class='mt-2 divide-y divide-stone-100'>
+                    @foreach ($dashboardItems as [$title, $copy])
                         <div class='flex gap-3 py-4'>
                             <span class='mt-0.5 grid size-6 shrink-0 place-items-center rounded-full bg-forest-50 text-forest-700'>
                                 <svg aria-hidden='true' class='size-3.5' viewBox='0 0 20 20' fill='none'>
@@ -66,7 +79,7 @@
                 </div>
 
                 <p class='mt-6 border-t border-white/10 pt-5 text-xs leading-5 text-forest-200'>
-                    Pengguna multi-role diarahkan dengan prioritas Owner, Admin, Juri, lalu Peserta.
+                    {{ $area === 'Owner' ? 'Buka Event untuk mengelola perlombaan dan menugaskan Admin penanggung jawab.' : 'Buka Event untuk melihat perlombaan yang ditugaskan kepada Anda.' }}
                 </p>
             </aside>
         </section>
@@ -75,7 +88,7 @@
             <svg aria-hidden='true' class='mt-0.5 size-5 shrink-0 text-gold-600' viewBox='0 0 24 24' fill='none'>
                 <path d='M12 8v4m0 4h.01M10.3 4.6 3.5 17a2 2 0 0 0 1.8 3h13.4a2 2 0 0 0 1.8-3L13.7 4.6a2 2 0 0 0-3.4 0Z' stroke='currentColor' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/>
             </svg>
-            <p class='leading-6'>Modul event dan operasional lomba belum diaktifkan pada tahap fondasi ini.</p>
+            <p class='leading-6'><a href="{{ route($area === 'Owner' ? 'owner.events.index' : 'admin.events.index') }}" class="inline-flex min-h-11 items-center font-bold text-forest-800 underline underline-offset-4">Buka daftar event →</a></p>
         </div>
     </div>
 </x-layouts.dashboard>
